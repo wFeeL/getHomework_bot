@@ -26,7 +26,7 @@ CALLBACK = {
     'send_adding_states': 'add_homework'
 }
 
-bot = Bot(config.bot_token.get_secret_value(), default=DefaultBotProperties(parse_mode='HTML'))
+bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode='HTML'))
 
 
 # Call a function from callback data

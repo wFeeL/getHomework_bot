@@ -20,7 +20,7 @@ class Homework(StatesGroup):
 
 
 router = Router()
-bot = Bot(config.bot_token.get_secret_value(), default=DefaultBotProperties(parse_mode='HTML'))
+bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode='HTML'))
 
 
 # Start editing homework (take homework_id for load homework data)

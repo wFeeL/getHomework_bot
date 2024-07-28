@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 logger.info('Bot starts polling...')
 
 # Create a telegram_bot by token
-bot = Bot(config.bot_token.get_secret_value(), default=DefaultBotProperties(parse_mode='HTML'))
+bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode='HTML'))
 locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
 dp = Dispatcher()
 

@@ -19,7 +19,7 @@ from telegram_bot.states import admins, edit_homework, homework
 from aiogram_calendar import DialogCalendar, DialogCalendarCallback, get_user_locale
 
 router = Router()
-bot = Bot(config.bot_token.get_secret_value(), default=DefaultBotProperties(parse_mode='HTML'))
+bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode='HTML'))
 
 
 # COMMANDS for common telegram user
