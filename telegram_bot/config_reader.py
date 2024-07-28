@@ -1,20 +1,13 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import SecretStr, PostgresDsn
-
-
-# Settings for telegram bot, database (postgres and weather
-class Settings(BaseSettings):
-    bot_token: SecretStr
-    pg_dsn: PostgresDsn
-    weather_API: SecretStr
-    model_config: SettingsConfigDict = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8"
-    )
+# Settings for telegram bot, database (postgres)cr and weather
+class Settings:
+    def __init__(self, bot_token, pg_dsn, weather_api):
+        self.bot_token = bot_token
+        self.pg_dsn = pg_dsn
+        self.weather_API = weather_api
 
 
 config = Settings(
-    bot_token="6235035727:AAEeeliZcjeNobBAuEjAmXGexNjxkMJVMCo",  # Telegram bot API TOKEN
+    bot_token="6235035727:AAEeeliZcjeNobBAuEjAmXGexNjxkMJVMCo",
     pg_dsn="postgres://postgres:password@postgres:5432",
-    weather_API="fc99a79328de8b7fa62cec28ebbb5a00"
+    weather_api="fc99a79328de8b7fa62cec28ebbb5a00"
 )
