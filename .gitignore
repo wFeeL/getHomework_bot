@@ -77,7 +77,7 @@ target/
 .ipynb_checkpoints
 
 # Config
-config_reader.py
+#config_reader.py
 
 # IPython
 profile_default/
