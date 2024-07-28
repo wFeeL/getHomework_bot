@@ -1,6 +1,6 @@
 import logging
 import datetime
-from telegram_bot.database_methods.db_connection import create_connection
+from telegram_bot.database_methods.database_connection import create_connection
 
 
 # Return database data from sql request
