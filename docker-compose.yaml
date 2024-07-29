@@ -24,7 +24,7 @@ services:
       - postgres
 
   pgadmin:
-    container_name: pgadmin_container
+    container_name: pgadmin
     image: dpage/pgadmin4:7.2
     environment:
       PGADMIN_DEFAULT_EMAIL: "habrpguser@habr.com"
@@ -39,7 +39,7 @@ services:
       - postgres
 
   homework_bot:
-    container_name: homework10p_bot_container
+    container_name: homework_bot_container
     image: homework_bot
     volumes:
       - pgadmin-data:/var/lib/pgadmin
@@ -51,7 +51,7 @@ volumes:
   db-data:
     external: true
   pgadmin-data:
-  modern-bot:
+  homework_bot:
 
 networks:
   postgres:
