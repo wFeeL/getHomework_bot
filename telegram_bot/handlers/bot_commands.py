@@ -16,7 +16,7 @@ from telegram_bot.keyboards import inline_markup
 from telegram_bot.decorators import check_admin
 from telegram_bot.states import admins, edit_homework, homework
 
-from aiogram_calendar import DialogCalendar, DialogCalendarCallback, get_user_locale
+from aiogram_calendar import DialogCalendar, DialogCalendarCallback
 
 router = Router()
 bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode='HTML'))
@@ -60,7 +60,7 @@ async def send_tomorrow_homework(message: Message) -> None:
 async def send_calendar_homework(message: Message) -> None:
     await message.answer(
         text=text_message.CHOOSE_DATE.format(date=''),
-        reply_markup=await DialogCalendar(locale='ru_RU').start_calendar(month=datetime.datetime.now().month)
+        reply_markup=await DialogCalendar().start_calendar(month=datetime.datetime.now().month)
     )
 
 
@@ -200,8 +200,7 @@ async def send_users_list(message: Message, _state: FSMContext = None) -> None:
 # Callback for aiogram_calendar and /calendar
 @router.callback_query(DialogCalendarCallback.filter())
 async def handle_dialog_calendar(callback: CallbackQuery, callback_data: CallbackData) -> None:
-    selected, date = await DialogCalendar(
-        locale=await get_user_locale(callback.from_user)).process_selection(callback, callback_data)
+    selected, date = await DialogCalendar().process_selection(callback, callback_data)
 
     # Check availability of selected date
     if selected:

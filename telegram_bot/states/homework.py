@@ -10,7 +10,7 @@ from telegram_bot.config_reader import config
 from telegram_bot.database_methods.database_request import *
 from telegram_bot.keyboards import inline_markup, reply_markup
 
-from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback, get_user_locale
+from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback
 
 
 # Form for homework data
@@ -47,8 +47,7 @@ async def process_subject(message: Message, state: FSMContext) -> None:
 
         await message.answer(
             text=text_message.CHOOSE_DATE.format(date=''),
-            reply_markup=await SimpleCalendar(
-                locale=await get_user_locale(message.from_user)).start_calendar())
+            reply_markup=await SimpleCalendar().start_calendar())
 
     except ValueError:
         await state.clear()
@@ -105,9 +104,7 @@ async def send_homework(message: Message, state: FSMContext) -> None:
 # Callback for simple calendar (aiogram_calendar)
 @router.callback_query(SimpleCalendarCallback.filter())
 async def handle_simple_calendar(callback_query: CallbackQuery, callback_data: CallbackData, state: FSMContext) -> None:
-    selected, date = await SimpleCalendar(
-        locale=await get_user_locale(callback_query.from_user)
-    ).process_selection(callback_query, callback_data)
+    selected, date = await SimpleCalendar().process_selection(callback_query, callback_data)
 
     if selected:
         date = date.strftime('%d.%m.%Y')
