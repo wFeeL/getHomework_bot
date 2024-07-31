@@ -81,6 +81,11 @@ def get_teachers() -> list:
     return create_request(sql_query)
 
 
+def get_user_data(telegram_id: int | str) -> list:
+    sql_query = f'SELECT subject_id, subject_path, search_by FROM users WHERE telegram_id = {telegram_id}'
+    return create_request(sql_query)
+
+
 # Return a timetable
 def get_timetable() -> list:
     sql_query = 'SELECT time FROM timetable'
@@ -132,3 +137,4 @@ def edit_homework(homework_id: int | str, date: str | datetime.datetime, descrip
 def delete_homework(homework_id: int | str) -> None:
     sql_query = f"DELETE FROM homework WHERE id = {homework_id}"
     create_request(sql_query, is_return=False)
+
