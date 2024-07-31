@@ -97,7 +97,10 @@ async def send_teachers(message: Message) -> None:
 # Command: /textbook
 @router.message(Command('textbook'))
 async def send_teachers(message: Message) -> None:
-    await message.answer(message.text)
+    subject, subject_path, search_by = '', '', ''
+    await message.answer(text=text_message.TEXTBOOK.format(
+        subject=subject, subject_path=subject_path, search_by=search_by
+    ))
 
 
 # Command: /support
