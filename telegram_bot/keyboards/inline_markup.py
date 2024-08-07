@@ -28,8 +28,22 @@ def get_donate_button(text='💰 Донат') -> list[InlineKeyboardButton]:
 
 # Inline keyboard button for admin
 def get_admin_menu_button() -> list[InlineKeyboardButton]:
-    button = [InlineKeyboardButton(text='🔄 Главное меню',
-                                   callback_data=callback_text.CALLBACK['send_admin_menu'])]
+    button = [InlineKeyboardButton(text='🔄 Главное меню', callback_data=callback_text.CALLBACK['send_admin_menu'])]
+    return button
+
+
+def get_set_subject_button() -> list[InlineKeyboardButton]:
+    button = [InlineKeyboardButton(text='Выбрать предмет', callback_data='choose_subject_textbook')]
+    return button
+
+
+def get_set_subject_path_button() -> list[InlineKeyboardButton]:
+    button = [InlineKeyboardButton(text='Выбрать часть', callback_data='choose_path')]
+    return button
+
+
+def get_textbook_button(text='🔄 Главное меню') -> list[InlineKeyboardButton]:
+    button = [InlineKeyboardButton(text=text, callback_data=callback_text.CALLBACK[send_textbook.__name__])]
     return button
 
 
@@ -75,7 +89,7 @@ def get_all_homework_keyboard() -> InlineKeyboardMarkup:
         subject_sticker = get_sticker_by_subject(subject_name)[0][0]
         data_length = len(data)
 
-        builder.row(InlineKeyboardButton(text=f'{subject_sticker} {subjects[i][0]}',
+        builder.row(InlineKeyboardButton(text=f'{subject_sticker} {subject_name}',
                                          callback_data="{\"subject\":\"" + str(subject_name) +
                                                        f"\",\"page\":\"{data_length}\",\"len\":"
                                                        + str(data_length) + "}"))
@@ -152,6 +166,32 @@ def get_weekday_keyboard(weekday_id) -> InlineKeyboardMarkup:
     return markup
 
 
+def get_textbook_keyboard(subject: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    if len(get_textbook_subjects()) > 1:
+        builder.add(get_set_subject_button()[0])
+
+    if get_subject_path(subject)[0][0] > 1:
+        builder.add(get_set_subject_path_button()[0])
+
+    builder.adjust(1, 1)
+    return builder.as_markup()
+
+
+def get_subject_textbook_keyboard() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+
+    subject_textbook = get_textbook_subjects()
+    for i in range(len(subject_textbook)):
+        subject_name = subject_textbook[i][0]
+        subject_sticker = get_sticker_by_subject(subject_name)[0][0]
+
+        builder.row(InlineKeyboardButton(text=f'{subject_sticker} {subject_name}',
+                                         callback_data="{\"textbook_subject\":\"" + str(subject_name) + "\"}"))
+    builder.row(get_textbook_button()[0])
+    return builder.as_markup()
+
+
 # Create site keyboard for /site
 def get_site_keyboard() -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(
@@ -192,7 +232,7 @@ def get_calendar_keyboard(selected_date, media_group: tuple[int, int] = None) ->
 
 def get_random_text_keyboard() -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(inline_keyboard=[
-        get_menu_button(), get_help_button(), get_support_button()
+        get_textbook_button('⚙️ Настройки'), get_menu_button('🔍 Открыть меню поиска'), get_help_button()
     ])
     return markup
 
