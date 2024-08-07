@@ -81,8 +81,71 @@ def get_teachers() -> list:
     return create_request(sql_query)
 
 
+# Return textbook's setting for user (/textbook)
 def get_user_data(telegram_id: int | str) -> list:
-    sql_query = f'SELECT subject_id, subject_path, search_by FROM users WHERE telegram_id = {telegram_id}'
+    sql_query = (f"SELECT s.name, users.subject_path FROM users LEFT JOIN subject as s "
+                 f"ON users.subject_id = s.id WHERE telegram_id = '{telegram_id}'")
+    return create_request(sql_query)
+
+
+def get_subject_path(subject: str) -> list:
+    subject_id = get_subject_id(subject)[0][0]
+    sql_query = f"SELECT path FROM textbook WHERE subject_id = {subject_id}"
+    return create_request(sql_query)
+
+
+def get_textbook_len(subject, subject_path) -> list:
+    subject_id = get_subject_id(subject)[0][0]
+    sql_query = f"SELECT PAGES FROM TEXTBOOK WHERE SUBJECT_ID = {subject_id} AND PATH = {subject_path}"
+    return create_request(sql_query)
+
+
+def get_search_by_numbers(subject: str, subject_path: int) -> list:
+    subject_id = get_subject_id(subject)[0][0]
+    sql_query = f"SELECT NUMBERS FROM TEXTBOOK WHERE SUBJECT_ID = {subject_id} AND PATH = {subject_path}"
+    return create_request(sql_query)
+
+
+def get_search_by_paragraph(subject: str, subject_path: int) -> list:
+    subject_id = get_subject_id(subject)[0][0]
+    sql_query = f"SELECT PARAGRAPHS FROM TEXTBOOK WHERE SUBJECT_ID = {subject_id} AND PATH = {subject_path}"
+    return create_request(sql_query)
+
+
+def get_textbook_subjects() -> list:
+    sql_query = ('SELECT name FROM textbook as t LEFT JOIN subject as s ON t.subject_id = s.id WHERE t.value = true '
+                 'ORDER BY t.id')
+    return create_request(sql_query)
+
+
+def set_textbook_subject(telegram_id: int | str, subject: str) -> None:
+    subject_id = get_subject_id(subject)[0][0]
+    sql_query = f"UPDATE users SET subject_id = {subject_id} WHERE telegram_id = '{telegram_id}'"
+    create_request(sql_query, is_return=False)
+
+
+# def get_textbook_data(subject: str, subject_path: int | str) -> list:
+#     subject_id = get_subject_id(subject)[0][0]
+#     sql_query = f"SELECT page, numbers"
+#     return create_request(sql_query)
+
+
+def get_page_by_paragraph(subject: str, subject_path: int, paragraph: int | str) -> list:
+    subject_id = get_subject_id(subject)[0][0]
+    sql_query = (f"SELECT PAGE FROM PAGES WHERE (PARAGRAPH like '%:{paragraph}' OR PARAGRAPH = '{paragraph}') "
+                 f"AND SUBJECT_ID = {subject_id} AND PATH = {subject_path}")
+    return create_request(sql_query)
+
+
+def get_page_by_number(subject: str, subject_path: int, number: int | str, paragraph: int = None) -> list:
+    subject_id = get_subject_id(subject)[0][0]
+    if paragraph is None:
+        sql_query = (f"SELECT PAGE FROM PAGES WHERE {number} <@ number AND SUBJECT_ID = {subject_id} "
+                     f"AND PATH = {subject_path}")
+    else:
+        sql_query = (f"SELECT PAGE FROM PAGES WHERE {number} <@ number AND PARAGRAPH = '{paragraph}' "
+                     f"AND SUBJECT_ID = {subject_id} AND PATH = {subject_path}")
+        # and paragraph_request <@ paragraph (in database paragraph have int4range)
     return create_request(sql_query)
 
 
@@ -137,4 +200,3 @@ def edit_homework(homework_id: int | str, date: str | datetime.datetime, descrip
 def delete_homework(homework_id: int | str) -> None:
     sql_query = f"DELETE FROM homework WHERE id = {homework_id}"
     create_request(sql_query, is_return=False)
-
