@@ -42,7 +42,7 @@ services:
     container_name: homework_bot_container
     image: homework_bot
     volumes:
-      - pgadmin-data:/var/lib/pgadmin
+      - ./textbook:/app/textbook
     restart: unless-stopped
     networks:
       - postgres
