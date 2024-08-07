@@ -4,6 +4,7 @@ import pymorphy3
 
 from aiogram import Router, Bot
 from aiogram.types import Message, CallbackQuery
+from aiogram.types.input_media_document import InputMediaDocument
 from aiogram.filters import Command
 from aiogram.client.bot import DefaultBotProperties
 from aiogram.filters.callback_data import CallbackData
@@ -11,8 +12,9 @@ from aiogram.fsm.context import FSMContext
 
 from telegram_bot import text_message, callback_text
 from telegram_bot.config_reader import config
+from telegram_bot.callback_text import get_textbook_page, get_textbook_number, get_textbook_paragraph
 from telegram_bot.database_methods.database_request import *
-from telegram_bot.keyboards import inline_markup
+from telegram_bot.keyboards import inline_markup, reply_markup
 from telegram_bot.decorators import check_admin
 from telegram_bot.states import admins, edit_homework, homework
 
@@ -96,11 +98,22 @@ async def send_teachers(message: Message) -> None:
 
 # Command: /textbook
 @router.message(Command('textbook'))
-async def send_teachers(message: Message) -> None:
-    subject, subject_path, search_by = '', '', ''
-    await message.answer(text=text_message.TEXTBOOK.format(
-        subject=subject, subject_path=subject_path, search_by=search_by
-    ))
+async def send_textbook(message: Message) -> None:
+    user_id = message.chat.id
+    user_data = get_user_data(user_id)
+    subject, subject_path = user_data[0][0], user_data[0][1]
+    search_by = ['страница']
+
+    if get_search_by_numbers(subject, subject_path)[0][0]:
+        search_by.append('номер')
+
+    if get_search_by_paragraph(subject, subject_path)[0][0]:
+        search_by.append('параграф')
+
+    await message.answer(
+        text=text_message.TEXTBOOK.format(subject=subject, subject_path=subject_path, search_by=', '.join(search_by)),
+        reply_markup=inline_markup.get_textbook_keyboard(subject)
+    )
 
 
 # Command: /support
@@ -292,6 +305,21 @@ async def handle_schedule(callback: CallbackQuery) -> None:
     )
 
 
+@router.callback_query(lambda call: 'choose_subject_textbook' in call.data)
+async def send_textbook_subjects(callback: CallbackQuery) -> None:
+    await callback.message.edit_text(text=text_message.CHOOSE_SUBJECT,
+                                     reply_markup=inline_markup.get_subject_textbook_keyboard())
+
+
+@router.callback_query(lambda call: 'textbook_subject' in call.data)
+async def handle_set_textbook_subject(callback: CallbackQuery) -> None:
+    callback_data = json.loads(callback.data)
+    textbook_subject = callback_data['textbook_subject']
+    set_textbook_subject(telegram_id=callback.message.chat.id, subject=textbook_subject)
+    await callback.message.delete()
+    await send_textbook(callback.message)
+
+
 # Callback for /admins
 @router.callback_query(lambda call: 'admin' in call.data)
 async def handle_edit_admins(callback: CallbackQuery, state: FSMContext) -> None:
@@ -324,7 +352,40 @@ async def handle_delete_data(callback: CallbackQuery) -> None:
         await callback.message.answer(text_message.INCORRECT_REQUEST)
 
 
-# Handle all other text messages from telegram user
 @router.message()
-async def handle_text(message: Message) -> None:
-    await message.answer(text=text_message.RANDOM_TEXT_FROM_USER, reply_markup=inline_markup.get_random_text_keyboard())
+async def handle_message_request(message: Message) -> None:
+    try:
+        user_id = message.chat.id
+        user_data = get_user_data(user_id)
+        subject, subject_path = user_data[0][0], user_data[0][1]
+        path = '././textbook/{name}.pdf'
+        request = message.text
+        search_message = await message.answer(text=text_message.SEARCH_REQUEST.format(request=request))
+        file_generators = [get_textbook_page, get_textbook_number, get_textbook_paragraph]
+
+        files = tuple([
+            await file.__call__(
+                subject=subject, subject_path=subject_path, request=request, path=path
+            ) for file in file_generators
+        ])
+
+        files = list(filter(lambda elem: elem is not None, files))
+
+        await search_message.delete()
+
+        if len(files) == 0:
+            raise FileNotFoundError
+
+        await message.answer(text=text_message.SEARCH_REQUEST_COMPLETE.format(request=request),
+                             reply_markup=reply_markup.get_pdf_page_keyboard(request))
+
+        if len(files) == 1:
+            await message.answer_document(document=files[-1])
+
+        else:
+            media_group = list(map(lambda file: InputMediaDocument(media=file), files))
+            await bot.send_media_group(chat_id=message.chat.id, media=media_group)
+
+    except FileNotFoundError:
+        await message.answer(text=text_message.RANDOM_TEXT_FROM_USER,
+                             reply_markup=inline_markup.get_random_text_keyboard())
