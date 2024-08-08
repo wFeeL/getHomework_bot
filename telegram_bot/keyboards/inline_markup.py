@@ -192,7 +192,7 @@ def get_calendar_keyboard(selected_date, media_group: tuple[int, int] = None) ->
 
 def get_random_text_keyboard() -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(inline_keyboard=[
-        get_menu_button(), get_help_button(), get_support_button()
+        get_menu_button('🔍 Поиск домашнего задания'), get_help_button(), get_support_button()
     ])
     return markup
 

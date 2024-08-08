@@ -117,7 +117,7 @@ async def send_site(message: Message) -> None:
 async def send_weather(message: Message) -> None:
     request = requests.get(
         url='https://api.openweathermap.org/data/2.5/weather?q=Saint%20Petersburg&appid='
-            f'{config.weather_API.get_secret_value()}&units=metric'
+            f'{config.weather_API}&units=metric'
     )
     # Check if request is successful
     if request.status_code == 200:

@@ -8,6 +8,6 @@ class Settings:
 
 config = Settings(
     bot_token="6235035727:AAEeeliZcjeNobBAuEjAmXGexNjxkMJVMCo",
-    pg_dsn="postgres://postgres:password@postgres:5432",
+    pg_dsn="postgres://postgres:password@localhost:5432",
     weather_api="fc99a79328de8b7fa62cec28ebbb5a00"
 )
