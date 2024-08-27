@@ -1,13 +1,20 @@
-# Settings for telegram bot, database (postgres)cr and weather
+import datetime
+
+
 class Settings:
-    def __init__(self, bot_token, pg_dsn, weather_api):
-        self.bot_token = bot_token
-        self.pg_dsn = pg_dsn
-        self.weather_API = weather_api
+    def __init__(self, bot_token, pg_dsn, weather_api, min_date, max_date):
+        self.bot_token: str = bot_token
+        self.pg_dsn: str = pg_dsn
+        self.weather_API: str = weather_api
+        self.min_date: datetime.datetime = min_date
+        self.max_date: datetime.datetime = max_date
 
 
+# Settings for telegram bot, database (postgres) and weather
 config = Settings(
     bot_token="6235035727:AAEeeliZcjeNobBAuEjAmXGexNjxkMJVMCo",
     pg_dsn="postgres://postgres:password@localhost:5432",
-    weather_api="fc99a79328de8b7fa62cec28ebbb5a00"
+    weather_api="9dfc63e1b4934a7bb35192745242008",
+    min_date=datetime.datetime(year=2024, month=9, day=1),
+    max_date=datetime.datetime(year=2025, month=5, day=31)
 )
