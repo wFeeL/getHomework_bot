@@ -1,6 +1,5 @@
 import datetime
 import os
-from dotenv import load_dotenv
 
 class Settings:
     def __init__(self, bot_token, pg_dsn, weather_api, min_date, max_date):
@@ -10,13 +9,11 @@ class Settings:
         self.min_date: datetime.datetime = min_date
         self.max_date: datetime.datetime = max_date
 
-
-load_dotenv()
 # Settings for telegram bot, database (postgres) and weather
 config = Settings(
-    bot_token=os.getenv("BOT_TOKEN"),
+    bot_token=os.environ['BOT_TOKEN'],
     pg_dsn="postgres://postgres:password@localhost:5432",
-    weather_api=os.getenv("WEATHER_API"),
+    weather_api=os.environ['WEATHER_API'],
     min_date=datetime.datetime(year=2024, month=9, day=1),
     max_date=datetime.datetime(year=2025, month=5, day=31)
 )
