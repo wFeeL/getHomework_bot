@@ -18,7 +18,7 @@ COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 COPY ./telegram_bot /app/telegram_bot
-COPY set_environment_variables.py .
+COPY set_environment_variables.py /app
 
 WORKDIR /app
 
