@@ -1,11 +1,10 @@
-from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from telegram_bot.database_methods.database_request import get_admins, get_users
 from telegram_bot.handlers import bot_commands
 
 
-# Decorator for checking admin's of bot
+# Decorator for checking admins of bot
 def check_admin(func):
     async def wrapper_check_admin(message: Message, **kwargs) -> None:
         if get_admins(telegram_id=message.chat.id)[0][2]:

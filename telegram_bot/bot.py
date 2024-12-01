@@ -13,7 +13,7 @@ from telegram_bot.config_reader import config
 # Getting logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-logger.info('Bot starts polling...')
+
 
 # Create a telegram_bot by token
 bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode='HTML'))

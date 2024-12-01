@@ -41,7 +41,7 @@ async def send_greetings(message: Message, **kwargs) -> None:
     user_telegram_name = message.chat.first_name
 
     # Check availability of user's registration
-    if len(get_users()) == 0 or str(user_telegram_id) not in list(map(lambda x: x[0], get_users())):
+    if not get_users() or str(user_telegram_id) not in list(map(lambda x: x[0], get_users())):
         add_user(telegram_id=user_telegram_id)  # Register user to database
 
     # Check availability of user's class
