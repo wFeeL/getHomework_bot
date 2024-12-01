@@ -216,17 +216,18 @@ def add_user(telegram_id: int | str, class_id: int = 0) -> None:
 
 
 # Add admin's value to database
-def change_admin(telegram_id: int | str, value: bool = True, class_id: int | str = 0) -> None:
+def add_admin(telegram_id: int | str, value: bool = True, super_admin: bool = False, class_id: int | str = 0) -> None:
     """
     Insert and update value of admin's table. If admin is already in database use 'UPDATE' method.
+    :param super_admin: the telegram id of super_admin
     :param telegram_id: the telegram id of admin
     :param value: the bool type value of admin activity
     :param class_id: the class id of admin
     """
     if telegram_id not in list(map(lambda x: x[0], get_admins())) and value:
-        sql_query = f"INSERT INTO admins (telegram_id, value, class_id) VALUES ('{telegram_id}', true, {class_id})"
+        sql_query = f"INSERT INTO admins (telegram_id, value, super_admin, class_id) VALUES ('{telegram_id}', true, {class_id})"
     else:
-        sql_query = f"UPDATE admins SET value = {value}, class_id = {class_id} WHERE telegram_id = '{telegram_id}'"
+        sql_query = f"UPDATE admins SET value = {value}, super_admin = {super_admin}, class_id = {class_id} WHERE telegram_id = '{telegram_id}'"
     create_request(sql_query, is_return=False)
 
 

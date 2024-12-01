@@ -1,6 +1,7 @@
 import datetime
 import os
 import logging
+from database_methods.database_request import add_admin
 
 class Settings:
     def __init__(self, bot_token, pg_dsn, weather_api, min_date, max_date):
@@ -15,10 +16,21 @@ def check_environment_variables(logger: logging.Logger):
     for key, value in os.environ.items():
         if value == 'secret_value' or not value:
             logger.error(
-                f"You're not specified {key} (environment variable)!\nPlease check Dockerfile and enter a value.")
+                f"You're not specified {key} (environment variable)!\nPlease check Dockerfile and enter a value."
+            )
+
+def set_super_admin(logger: logging.Logger):
+    if os.environ['SUPER_ADMIN_TELEGRAM_ID']:
+        try:
+            add_admin(telegram_id=os.environ['SUPER_ADMIN_TELEGRAM_ID'], value=True, super_admin=True)
+        except ValueError:
+            logger.error("Something went wrong while setting super admin.")
 
 
-check_environment_variables(logging.getLogger())
+bot_logger = logging.getLogger()
+
+check_environment_variables(bot_logger)
+set_super_admin(bot_logger)
 
 # Settings for telegram bot, database (postgres) and weather
 config = Settings(

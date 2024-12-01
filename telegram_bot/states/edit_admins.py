@@ -3,7 +3,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 
-from telegram_bot.database_methods.database_request import change_admin, get_class
+from telegram_bot.database_methods.database_request import add_admin, get_class
 from telegram_bot.keyboards import reply_markup, inline_markup
 from telegram_bot import text_message
 
@@ -42,7 +42,7 @@ async def process_telegram_id(message: Message, state: FSMContext) -> None:
             await state.set_state(AdminForm.class_id)
             await message.answer(text_message.CHOOSE_CLASS, reply_markup=reply_markup.get_class_keyboard())
         else:
-            change_admin(telegram_id, value=False)
+            add_admin(telegram_id, value=False)
             await message.answer(text_message.EDIT_ADMINS)
             await state.clear()
 
@@ -61,7 +61,7 @@ async def process_class_id(message: Message, state: FSMContext) -> None:
         data = await state.get_data()
 
         telegram_id = data['telegram_id']
-        change_admin(telegram_id=telegram_id, class_id=class_id, value=True)
+        add_admin(telegram_id=telegram_id, value=True, class_id=class_id)
 
         await message.answer(text_message.EDIT_ADMINS.format(telegram_id), reply_markup=ReplyKeyboardRemove())
 
