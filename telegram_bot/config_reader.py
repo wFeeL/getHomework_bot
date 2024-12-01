@@ -23,7 +23,7 @@ check_environment_variables(logging.getLogger())
 # Settings for telegram bot, database (postgres) and weather
 config = Settings(
     bot_token=os.environ['BOT_TOKEN'],
-    pg_dsn="postgres://postgres:password@localhost:5432",
+    pg_dsn="postgres://postgres:password@postgres:5432",
     weather_api=os.environ['WEATHER_API'],
     min_date=datetime.datetime(year=2024, month=9, day=1),
     max_date=datetime.datetime(year=2025, month=5, day=31)
