@@ -13,6 +13,7 @@ ENV LANG ru_RU.UTF-8
 ENV LC_ALL ru_RU.UTF-8
 ENV BOT_TOKEN secret_value
 ENV WEATHER_API secret_value
+ENV SUPER_ADMIN_TELEGRAM_ID secret_value
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
