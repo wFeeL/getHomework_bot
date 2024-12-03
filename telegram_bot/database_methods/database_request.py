@@ -224,7 +224,7 @@ def add_admin(telegram_id: int | str, value: bool = True, super_admin: bool = Fa
     :param value: the bool type value of admin activity
     :param class_id: the class id of admin
     """
-    if telegram_id not in list(map(lambda x: x[0], get_admins())) and value:
+    if telegram_id not in list(map(lambda x: x[0], get_admins())) and (value or super_admin):
         sql_query = f"INSERT INTO admins (telegram_id, value, super_admin, class_id) VALUES ('{telegram_id}', true, {class_id})"
     else:
         sql_query = f"UPDATE admins SET value = {value}, super_admin = {super_admin}, class_id = {class_id} WHERE telegram_id = '{telegram_id}'"
