@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.bot import DefaultBotProperties
 from aiogram.fsm.storage.memory import MemoryStorage
 
-from telegram_bot.states import edit_homework, edit_admins, add_homework
+from telegram_bot.states import edit_homework, edit_admins, add_homework, bot_message, add_class, edit_class
 from telegram_bot.handlers import bot_commands
 from telegram_bot.config_reader import config
 
@@ -27,6 +27,9 @@ async def main() -> None:
     dp.include_router(edit_homework.router)
     dp.include_router(edit_admins.router)
     dp.include_router(add_homework.router)
+    dp.include_router(add_class.router)
+    dp.include_router(edit_class.router)
+    dp.include_router(bot_message.router)
     dp.include_router(bot_commands.router)
 
     await dp.start_polling(bot, skip_updates=True)

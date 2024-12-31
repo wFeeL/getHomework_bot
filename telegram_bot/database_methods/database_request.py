@@ -1,26 +1,5 @@
-import logging
 import datetime
-from telegram_bot.database_methods.database_connection import create_connection
-
-
-# Return database data from sql request
-def create_request(sql_query: str, is_return: bool = True) -> list | None:
-    """
-    Return list of sql query's result. Create connection by config settings and execute sql query.
-    :param sql_query: the sql query to execute with cursor.
-    :param is_return: the bool type for returning value from request.
-    :return: List of sql query result.
-    """
-    conn = create_connection()
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(sql_query)
-                if is_return:
-                    return cur.fetchall()
-    except Exception as e:
-        logging.error(f"Error fetching sql request data from database: {e}")
-    return None
+from telegram_bot.database_methods.database_connection import create_request
 
 
 # Return condition for sql queries
@@ -188,7 +167,7 @@ def get_quotes(text: str = None, author: str = None, value: bool = None) -> list
 
 
 # Add homework's value to database
-def add_value(subject: str, date: str, description: str, file_id: str, class_id: int | str) -> None:
+def add_homework_value(subject: str, date: str, description: str, file_id: str, class_id: int | str) -> None:
     """
     Insert value into homework's table.
     :param subject: the subject of homework
@@ -204,8 +183,12 @@ def add_value(subject: str, date: str, description: str, file_id: str, class_id:
     create_request(sql_query, is_return=False)
 
 
+def add_class_value(number: str | int, letter: str | int) -> None:
+    sql_query = f"INSERT INTO class (number, letter, value) VALUES ({number}, '{letter}', true)"
+    create_request(sql_query, is_return=False)
+
 # Add user's value to database
-def add_user(telegram_id: int | str, class_id: int = 0) -> None:
+def add_user(telegram_id: int | str, class_id: int | str = 0) -> None:
     """
     Insert value into user's table.
     :param telegram_id: the telegram id of user
@@ -216,23 +199,22 @@ def add_user(telegram_id: int | str, class_id: int = 0) -> None:
 
 
 # Add admin's value to database
-def add_admin(telegram_id: int | str, value: bool = True, super_admin: bool = False, class_id: int | str = 0) -> None:
+def add_admin(telegram_id: int | str, value: bool = True, class_id: int | str = 0) -> None:
     """
     Insert and update value of admin's table. If admin is already in database use 'UPDATE' method.
-    :param super_admin: the telegram id of super_admin
     :param telegram_id: the telegram id of admin
     :param value: the bool type value of admin activity
     :param class_id: the class id of admin
     """
-    if telegram_id not in list(map(lambda x: x[0], get_admins())) and (value or super_admin):
-        sql_query = f"INSERT INTO admins (telegram_id, value, super_admin, class_id) VALUES ('{telegram_id}', true, {class_id})"
+    if telegram_id not in list(map(lambda x: x[0], get_admins())) and value:
+        sql_query = f"INSERT INTO admins (telegram_id, value, class_id) VALUES ('{telegram_id}', {value}, {class_id})"
     else:
-        sql_query = f"UPDATE admins SET value = {value}, super_admin = {super_admin}, class_id = {class_id} WHERE telegram_id = '{telegram_id}'"
+        sql_query = f"UPDATE admins SET value = {value}, class_id = {class_id} WHERE telegram_id = '{telegram_id}'"
     create_request(sql_query, is_return=False)
 
 
 # Update user's class to database
-def update_user_class(telegram_id: int | str, class_id: int) -> None:
+def update_user_class(telegram_id: int | str, class_id: int | str) -> None:
     """
     Update user's class.
     :param telegram_id: the telegram id of user
@@ -241,6 +223,16 @@ def update_user_class(telegram_id: int | str, class_id: int) -> None:
     sql_query = f"UPDATE users SET class_id = {class_id} WHERE telegram_id = '{telegram_id}'"
     create_request(sql_query, is_return=False)
 
+
+# Update admin's class to database
+def update_admin_class(telegram_id: int | str, class_id: int | str) -> None:
+    """
+    Update user's class.
+    :param telegram_id: the telegram id of user
+    :param class_id: the class id of user
+    """
+    sql_query = f"UPDATE admins SET class_id = {class_id} WHERE telegram_id = '{telegram_id}'"
+    create_request(sql_query, is_return=False)
 
 # Update homework's value to database
 def update_homework(homework_id: int | str, date: str, description: str, file_id: str) -> None:
@@ -256,6 +248,11 @@ def update_homework(homework_id: int | str, date: str, description: str, file_id
                  f"WHERE id = {homework_id}")
     create_request(sql_query, is_return=False)
 
+# Update homework's value to database
+def update_class(class_id: int | str, number: int | str, letter: str) -> None:
+    sql_query = f"UPDATE class SET number = {number}, letter = '{letter}' WHERE id = {class_id}"
+    create_request(sql_query, is_return=False)
+
 
 # Delete homework's value from database
 def delete_homework(homework_id: int | str) -> None:
@@ -264,4 +261,18 @@ def delete_homework(homework_id: int | str) -> None:
     :param homework_id: the id of homework
     """
     sql_query = f"DELETE FROM homework WHERE id = {homework_id}"
+    create_request(sql_query, is_return=False)
+
+
+def delete_class(class_id: int | str) -> None:
+    sql_query = f"DELETE FROM class WHERE id = {class_id}"
+    class_users = get_users(class_id=class_id)
+    class_admins = get_admins(class_id=class_id)
+    for user in class_users:
+        update_user_class(telegram_id=user[0], class_id=0)
+    for admin in class_admins:
+        update_admin_class(telegram_id=admin[0], class_id=0)
+    # also delete homework, schedule, teachers whose class_id is deleted
+    # create delete_{table_name}(some parameters for identification {columns of table_name}, like id, description etc.)
+    # create func for all tables and call it (delete something) with params
     create_request(sql_query, is_return=False)
