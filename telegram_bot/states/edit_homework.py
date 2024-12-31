@@ -58,10 +58,10 @@ async def process_edit_homework(message: Message, state: FSMContext, is_edited: 
         homework_text = text_message.EDIT_HOMEWORK.format(subject=subject, date=date, description=description)
 
         if file_id != 'None':
-            markup = inline_markup.get_edit_keyboard(is_edited=is_edited)
+            markup = inline_markup.get_edit_homework_keyboard(is_edited=is_edited)
             await bot.send_photo(caption=homework_text, reply_markup=markup, photo=file_id, chat_id=message.chat.id)
         else:
-            markup = inline_markup.get_edit_keyboard(is_edited=is_edited, is_file=False)
+            markup = inline_markup.get_edit_homework_keyboard(is_file=False, is_edited=is_edited)
             await message.answer(homework_text, reply_markup=markup)
 
     except KeyError:

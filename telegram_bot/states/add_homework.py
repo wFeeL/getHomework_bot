@@ -54,7 +54,7 @@ async def process_subject(message: Message, state: FSMContext) -> None:
         await message.answer(
             text=text_message.CHOOSE_DATE.format(date=''),
             reply_markup=await calendar.start_calendar(
-                year=today.year, month=today.month, day=today.day)
+                year=today.year, month=today.month)
         )
 
     except ValueError:
@@ -128,7 +128,7 @@ async def send_data(callback: CallbackQuery, state: FSMContext) -> None:
         homework_data = await state.get_data()
         subject, date, description, file_id = (homework_data['subject'], homework_data['date'],
                                                homework_data['description'], homework_data['file_id'])
-        add_value(subject, date, description, file_id, class_id)
+        add_homework_value(subject, date, description, file_id, class_id)
 
         await callback.message.answer(text_message.ADDING_HOMEWORK_COMPLETE,
                                       reply_markup=inline_markup.get_admin_menu())
