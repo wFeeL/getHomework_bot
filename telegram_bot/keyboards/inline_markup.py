@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
+from aiogram_dialog.widgets.kbd import Keyboard
+from telebot.types import KeyboardButton
 
 from telegram_bot import callback_text, text_message
 from telegram_bot.database_methods.database_request import get_subject, get_homework, get_weekday, get_class
@@ -60,6 +62,13 @@ def get_stop_state_button(text='👀 Скрыть') -> list[InlineKeyboardButton
     button = [InlineKeyboardButton(text=text, callback_data='stop_state')]
     return button
 
+def get_edit_class_button(text='📝 Изменить данные класса', class_id: int | str = 0) -> list[InlineKeyboardButton]:
+    button = [InlineKeyboardButton(text=text, callback_data="{\"class_id\":" + str(class_id) + ",\"edit\":\"True\"}")]
+    return button
+
+def get_delete_class_button(text='🗑️ Удалить класс', class_id: int | str = 0) -> list[InlineKeyboardButton]:
+    button = [InlineKeyboardButton(text=text, callback_data="{\"class_id\":" + str(class_id) + ",\"delete\":\"True\"}")]
+    return button
 
 # def make_button(
 #         text: str,
@@ -190,7 +199,8 @@ def get_schedule_keyboard(class_id: int | str) -> InlineKeyboardMarkup:
 # Create class keyboard for /class
 def get_class_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    classes = get_class()
+    classes = get_class(value=True)
+    # check if list of class is null
 
     for elem in classes:
         class_id, letter, number = elem[0], elem[1], elem[2]
@@ -200,7 +210,7 @@ def get_class_keyboard() -> InlineKeyboardMarkup:
 
 
 # Create schedule's day for buttons of /schedule
-def get_weekday_keyboard(weekday_id) -> InlineKeyboardMarkup:
+def get_weekday_keyboard(weekday_id: int | str) -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='◀ Назад', callback_data="{\"weekday_id\":\"" + f"{weekday_id - 1}" + "\"}"),
          InlineKeyboardButton(text='Вперед ▶', callback_data="{\"weekday_id\":\"" + f"{weekday_id + 1}" + "\"}")],
@@ -264,9 +274,13 @@ def get_delete_message_keyboard() -> InlineKeyboardMarkup:
 
 
 # Create search homework keyboard
-def get_search_homework_keyboard() -> InlineKeyboardMarkup:
-    markup = InlineKeyboardMarkup(inline_keyboard=[get_homework_menu_button('🔍 Открыть меню поиска')])
-    return markup
+def get_chosen_class_keyboard(class_id: int = 0, is_super_admin: bool = False) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.add(get_homework_menu_button('🔍 Открыть меню поиска')[0],get_class_button()[0])
+    if is_super_admin:
+        builder.add(get_edit_class_button(class_id=class_id)[0], get_delete_class_button(class_id=class_id)[0])
+    builder.adjust(1, 1)
+    return builder.as_markup()
 
 
 # Inline markup for admin
@@ -296,8 +310,16 @@ def get_send_homework_keyboard() -> InlineKeyboardMarkup:
     return markup
 
 
+def get_send_class_keyboard() -> InlineKeyboardMarkup:
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='✅ Сохранить данные', callback_data='send_class_data')],
+            [InlineKeyboardButton(text='🚫 Отмена', callback_data='cancel_send_data')]
+        ])
+    return markup
+
 # Create edit keyboard for /edit (editing menu for homework's data)
-def get_edit_keyboard(is_file: bool = True, is_edited: bool = False) -> InlineKeyboardMarkup:
+def get_edit_homework_keyboard(is_file: bool = True, is_edited: bool = False) -> InlineKeyboardMarkup:
     keyboard = [[InlineKeyboardButton(text='🗓️ Редактировать дату', callback_data='edit_date')],
                 [InlineKeyboardButton(text='📝 Редактировать описание', callback_data='edit_description')],
                 [InlineKeyboardButton(text='🖼️ Прикрепить изображение', callback_data='edit_file')]]
@@ -309,12 +331,28 @@ def get_edit_keyboard(is_file: bool = True, is_edited: bool = False) -> InlineKe
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     return markup
 
+def get_edit_class_keyboard(is_edited: bool = False) -> InlineKeyboardMarkup:
+    keyboard = [[InlineKeyboardButton(text='🗓️ Редактировать номер', callback_data='edit_number')],
+                [InlineKeyboardButton(text='📝 Редактировать литер', callback_data='edit_letter')]]
+    if is_edited:
+        keyboard.append([InlineKeyboardButton(text='✅ Сохранить данные', callback_data='edit_class_data')])
+        keyboard.append(get_stop_state_button())
+    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    return markup
+
 
 # Create skipping file keyboard for /add
 def get_skip_file_keyboard() -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text='Пропустить выбор фото ⏩', callback_data='skip_file')]
+        ])
+    return markup
+
+def get_send_message_keyboard() -> InlineKeyboardMarkup:
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='✅ Отправить сообщение', callback_data='send_message')]
         ])
     return markup
 

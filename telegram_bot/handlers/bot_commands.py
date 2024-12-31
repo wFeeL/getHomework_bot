@@ -15,9 +15,9 @@ from aiogram_dialog import DialogManager, setup_dialogs, StartMode
 from telegram_bot import text_message, callback_text
 from telegram_bot.config_reader import config
 from telegram_bot.database_methods.database_request import *
-from telegram_bot.decorators import check_admin, check_class
+from telegram_bot.decorators import check_admin, check_class, check_super_admin
 from telegram_bot.keyboards import inline_markup
-from telegram_bot.states import edit_admins, edit_homework, add_homework, calendar
+from telegram_bot.states import edit_admins, edit_homework, add_homework, calendar, bot_message, add_class, edit_class
 
 router = Router()  # Create a router for bot's commands
 router.include_router(calendar.dialog)  # Include calendar router (dialog window from aiogram_dialog)
@@ -318,13 +318,16 @@ async def send_admin_menu(message: Message, **kwargs) -> None:
     :param message: Message
     :param kwargs: Other message options (need for callback function)
     """
-    class_id = get_admins(telegram_id=message.chat.id)[0][4]
-    class_data = get_class(id=class_id)[0]
-    letter, number = class_data[1], class_data[2]
+    try:
+        class_id = get_admins(telegram_id=message.chat.id)[0][4]
+        class_data = get_class(id=class_id)[0]
+        letter, number = class_data[1], class_data[2]
 
-    await message.answer(text=text_message.ADMIN_GREETINGS.format(
-        class_text=text_message.CLASS_CHOSEN.format(number=number, letter=letter))
-    )
+        await message.answer(text=text_message.ADMIN_GREETINGS.format(
+            class_text=text_message.CLASS_CHOSEN.format(number=number, letter=letter))
+        )
+    except IndexError:
+        await message.answer(text=text_message.ADMIN_CLASS_ERROR)
 
 
 # Command: /add
@@ -362,7 +365,7 @@ async def send_edit_menu(message: Message, **kwargs) -> None:
 # Command: /admins
 # Command is only for super admins (count: 1)
 @router.message(Command('admins'))
-@check_admin
+@check_super_admin
 async def send_admins_menu(message: Message, **kwargs) -> None:
     """
     Send list of admins.
@@ -372,27 +375,35 @@ async def send_admins_menu(message: Message, **kwargs) -> None:
     :param kwargs: Other message options (need for callback function)
     """
     # Create admin_list from database data
-    admin_id = str(message.chat.id)
-    if admin_id in list(map(lambda x: x[0], get_admins(value=True, super_admin=True))):
-        admins_list = list(map(lambda x: x[0], get_admins(value=True)))
-        text = text_message.ADMINS_LIST
-        count = 0
+    admins_list = list(map(lambda x: x[0], get_admins(value=True)))
+    admins_without_class = list()
+    text = text_message.ADMINS_LIST
+    count = 0
 
-        for admin in admins_list:
-            try:
-                user_chat = await bot.get_chat(chat_id=admin)
-                if user_chat.username is not None:
-                    count += 1
-                    class_id = get_admins(telegram_id=admin)[0][1]
-                    class_data = get_class(id=class_id)[0]
-                    letter, number = class_data[1], class_data[2]
-                    text += text_message.ADMIN_FORM.format(index=count, name=user_chat.first_name,
-                                                           username=user_chat.username, letter=letter, number=number)
-            except TelegramBadRequest:
-                pass
-        await message.answer(text=text, reply_markup=inline_markup.get_admins_keyboard())
-    else:
-        await handle_text(message, **kwargs)
+    for i in range(len(admins_list)):
+        try:
+            admins_list[i] = await bot.get_chat(chat_id=admins_list[i])
+        except TelegramBadRequest:
+            pass
+
+    for admin in admins_list:
+        try:
+            if admin.username is not None:
+                count += 1
+                class_id = get_admins(telegram_id=admin.id)[0][1]
+                class_data = get_class(id=class_id)[0]
+                letter, number = class_data[1], class_data[2]
+                text += text_message.ADMIN_FORM.format(
+                        index=count, name=admin.first_name, username=admin.username,
+                        telegram_id=admin.id, letter=letter, number=number)
+        except IndexError:
+            admins_without_class.append(admin)
+
+    if len(admins_without_class) > 0:
+        await message.answer(
+            text=text_message.ADMINS_WITHOUT_CLASS_ERROR.format(
+                     admins_list='\n'.join(list(map(lambda elem: "@" + elem.username, admins_without_class)))))
+    await message.answer(text=text, reply_markup=inline_markup.get_admins_keyboard())
 
 
 # Command: /users
@@ -417,15 +428,46 @@ async def send_users_list(message: Message, **kwargs) -> None:
             if user_chat.username is not None:
                 count += 1
                 is_admin = str(user) in list(map(lambda x: x[0], get_admins(value=True)))
-                admin_text = '<b>Администратор</b>' if is_admin else ''
+                admin_text = text_message.ADMIN_TEXT if is_admin else ''
                 text += text_message.USER_FORM.format(index=count, is_admin=admin_text, name=user_chat.first_name,
-                                                      username=user_chat.username)
+                                                      username=user_chat.username, telegram_id=user_chat.id)
         except TelegramBadRequest:
             pass
 
     text += text_message.LEN_USERS.format(len_users_list=count)
     await message.answer(text=text, reply_markup=inline_markup.get_users_keyboard())
 
+
+# Command: /bot_message
+@router.message(Command('bot_message'))
+@check_admin
+async def send_bot_message(message: Message, state: FSMContext, **kwargs) -> None:
+    # Create bot's user list from database data
+    # users_list = list(map(lambda x: x[0], get_users()))
+    await bot_message.register_message(message, state)
+
+
+# Command: /add_class
+@router.message(Command('add_class'))
+@check_super_admin
+async def send_add_class(message: Message, state: FSMContext, **kwargs) -> None:
+    await add_class.register_class(message, state)
+
+
+# Command: /edit_class
+@router.message(Command('edit_class'))
+@check_super_admin
+async def send_edit_class(message: Message, **kwargs) -> None:
+    if get_users(telegram_id=message.chat.id)[0][1] == 0:
+        text = text_message.CHOOSE_CLASS
+    else:
+        class_id = get_users(telegram_id=message.chat.id)[0][1]
+        class_len = len(get_users(class_id=class_id))
+        class_data = get_class(id=class_id)[0]
+        letter, number = class_data[1], class_data[2]
+
+        text = text_message.CLASS.format(number=number, letter=letter, class_len=class_len)
+    await message.answer(text=text, reply_markup=inline_markup.get_class_keyboard())
 
 # CALLBACKS
 # Handle most of callback's (/menu, /tomorrow, /calendar, /homework etc.)
@@ -530,16 +572,49 @@ async def handle_schedule(callback: CallbackQuery) -> None:
 
 
 # Callback for /class
-@router.callback_query(lambda call: 'class_id' in call.data)
+@router.callback_query(lambda call: 'class_id' in call.data and ('edit' not in call.data and 'delete' not in call.data))
 async def handle_class(callback: CallbackQuery) -> None:
     # Loading data from callback in json format
     callback_data = json.loads(callback.data)
-    class_id = int(callback_data['class_id'][0])
+    class_id = int(callback_data['class_id'])
     update_user_class(telegram_id=callback.message.chat.id, class_id=class_id)
     class_data = get_class(id=class_id)[0]
     letter, number = class_data[1], class_data[2]
-    await callback.message.edit_text(text=text_message.UPDATE_CLASS_SUCCESSFUL.format(number=number, letter=letter),
-                                     reply_markup=inline_markup.get_search_homework_keyboard())
+    is_super_admin = False
+    try:
+        is_super_admin = get_admins(telegram_id=callback.message.chat.id)[0][3]
+
+    except IndexError:
+        pass
+
+    await callback.message.edit_text(
+        text=text_message.UPDATE_CLASS_SUCCESSFUL.format(number=number, letter=letter),
+        reply_markup=inline_markup.get_chosen_class_keyboard(class_id=class_id, is_super_admin=is_super_admin)
+    )
+
+# Callback for /edit_class
+@router.callback_query(lambda call: 'class_id' in call.data and 'edit' in call.data)
+async def handle_edit_class(callback: CallbackQuery, state: FSMContext) -> None:
+    # Loading data from callback in json format
+    callback_data = json.loads(callback.data)
+    class_id = callback_data['class_id']
+    await state.clear()
+    await callback.message.delete()
+    await edit_class.update_edit_data(callback.message, state, class_id)
+
+# Callback for delete_class
+@router.callback_query(lambda call: 'class_id' in call.data and 'delete' in call.data)
+async def handle_delete_class(callback: CallbackQuery) -> None:
+    try:
+        # Loading data from callback in json format
+        callback_data = json.loads(callback.data)
+        delete_class(callback_data['class_id'])
+        await callback.message.delete()
+        await callback.message.answer(text_message.DELETE_CLASS)
+
+    except KeyError:
+        await callback.message.answer(text_message.INCORRECT_REQUEST,
+                                      reply_markup=inline_markup.get_delete_message_keyboard())
 
 
 # Callback for /admins

@@ -23,3 +23,12 @@ def get_class_keyboard() -> ReplyKeyboardMarkup:
         class_id, letter, number = elem[0], elem[1], elem[2]
         builder.row(KeyboardButton(text=f'{number} {letter}'))
     return builder.as_markup()
+
+# Create choose class keyboard for /add_class
+def get_choose_class_keyboard() -> ReplyKeyboardMarkup:
+    builder = ReplyKeyboardBuilder()
+
+    CLASS_LEN = 11 # set as constant variable
+    for i in range(1, CLASS_LEN + 1):
+        builder.add(KeyboardButton(text=str(i)))
+    return builder.as_markup()

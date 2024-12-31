@@ -3,7 +3,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 
-from telegram_bot.database_methods.database_request import add_admin, get_class
+from telegram_bot.database_methods.database_request import add_admin, get_class, get_admins
 from telegram_bot.keyboards import reply_markup, inline_markup
 from telegram_bot import text_message
 
@@ -30,8 +30,9 @@ async def edit_admins(message: Message, state: FSMContext, is_admin: bool) -> No
 async def process_telegram_id(message: Message, state: FSMContext) -> None:
     try:
         telegram_id = message.text
+        is_super_admin = get_admins(telegram_id=telegram_id)[0][3]
         # Checking conditions for telegram_id
-        if not telegram_id.isalnum() or 10 < len(telegram_id) < 6 or telegram_id == str(message.chat.id):
+        if (not telegram_id.isalnum() or 10 < len(telegram_id) < 6 or telegram_id == str(message.chat.id)) and not is_super_admin:
             raise ValueError
 
         await state.update_data(telegram_id=telegram_id)
