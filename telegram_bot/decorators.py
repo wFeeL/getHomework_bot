@@ -29,16 +29,14 @@ def check_super_admin(func):
 # Decorator for checking class of users
 def check_class(func):
     async def wrapper_check_class(message: Message, **kwargs) -> None:
-        if get_users(telegram_id=message.chat.id)[0][1] == 0:
-            await bot_commands.send_class(message, **kwargs)
-        else:
-            await func(message, **kwargs)
+        try:
+            get_users(telegram_id=message.chat.id)[0][1]
+        except IndexError:
+            await bot_commands.authorize_user(message)
+        finally:
+            if get_users(telegram_id=message.chat.id)[0][1] == 0:
+                await bot_commands.send_choose_class(message)
+            else:
+                await func(message, **kwargs)
 
     return wrapper_check_class
-
-
-# def check_condition(func, condition1: bool = False, condition2: bool = False, check_super_admin: bool = False):
-#     async def wrapper_check_condition(message: Message, **kwargs) -> None:
-#         print(condition1, condition2, check_super_admin)
-#         await func(message, **kwargs)
-#     return wrapper_check_condition

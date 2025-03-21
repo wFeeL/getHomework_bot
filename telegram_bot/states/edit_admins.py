@@ -30,20 +30,24 @@ async def edit_admins(message: Message, state: FSMContext, is_admin: bool) -> No
 async def process_telegram_id(message: Message, state: FSMContext) -> None:
     try:
         telegram_id = message.text
-        is_super_admin = get_admins(telegram_id=telegram_id)[0][3]
-        # Checking conditions for telegram_id
-        if (not telegram_id.isalnum() or 10 < len(telegram_id) < 6 or telegram_id == str(message.chat.id)) and not is_super_admin:
+        is_super_admin = False
+        try:
+            is_super_admin = get_admins(telegram_id=telegram_id)[0][3]
+        except IndexError:
+            pass
+
+        if not telegram_id.isdigit() or len(telegram_id) > 10 or len(telegram_id) < 6:
             raise ValueError
 
         await state.update_data(telegram_id=telegram_id)
-        data = await state.get_data()
-
-        telegram_id, is_admin = data['telegram_id'], data['is_admin']
+        admins_data = await state.get_data()
+        print(admins_data, admins_data.values())
+        is_admin, telegram_id = admins_data.values()
         if is_admin:
             await state.set_state(AdminForm.class_id)
             await message.answer(text_message.CHOOSE_CLASS, reply_markup=reply_markup.get_class_keyboard())
         else:
-            add_admin(telegram_id, value=False)
+            add_admin(telegram_id, value=False, super_admin=is_super_admin)
             await message.answer(text_message.EDIT_ADMINS)
             await state.clear()
 
@@ -62,7 +66,12 @@ async def process_class_id(message: Message, state: FSMContext) -> None:
         data = await state.get_data()
 
         telegram_id = data['telegram_id']
-        add_admin(telegram_id=telegram_id, value=True, class_id=class_id)
+        is_super_admin = False
+        try:
+            is_super_admin = get_admins(telegram_id=telegram_id)[0][3]
+        except IndexError:
+            pass
+        add_admin(telegram_id=telegram_id, value=True, super_admin=is_super_admin, class_id=class_id)
 
         await message.answer(text_message.EDIT_ADMINS.format(telegram_id), reply_markup=ReplyKeyboardRemove())
 

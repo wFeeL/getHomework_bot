@@ -64,7 +64,7 @@ def get_homework(id: int | str = None, subject_id: int | str = None, date: datet
     :return: List of row from database
     """
     condition = create_condition(locals())
-    sql_query = f"SELECT id, subject_id, date, description, file_id FROM homework {condition} ORDER by date"
+    sql_query = f"SELECT id, subject_id, date, description, file_id FROM homework {condition} ORDER by date, subject_id"
     return create_request(sql_query)
 
 
@@ -81,7 +81,7 @@ def get_subject(id: int | str = None, name: str = None, sticker: str = None,
     :return: List of row from database
     """
     condition = create_condition(args=locals(), exception=['class_ids'])
-    sql_query = f"SELECT id, name, sticker, value, class_ids FROM subject {condition} ORDER BY id"
+    sql_query = f"SELECT id, name, sticker, value, class_ids FROM subject {condition} ORDER BY name"
     return create_request(sql_query)
 
 
@@ -100,7 +100,7 @@ def get_weekday(id: int | str = None, name: str = None, class_ids: int | str = N
 
 
 # Return data from class table
-def get_class(id: int | str = None, letter: str = None, number: int | str = None, value: bool | str = None):
+def get_class(id: int | str = None, letter: str = None, number: int | str = None, value: bool | str = None) -> list:
     """
     Return class's data from class's table from database. Take args for finding class in table.
     :param id: the id of class
@@ -187,6 +187,16 @@ def add_class_value(number: str | int, letter: str | int) -> None:
     sql_query = f"INSERT INTO class (number, letter, value) VALUES ({number}, '{letter}', true)"
     create_request(sql_query, is_return=False)
 
+def add_subject_value(name: str, sticker: str, class_id: int | str, value: bool = True) -> None:
+    class_ids_stroke = '{' + str(class_id) + '}'
+    sql_query = f"INSERT INTO subject (name, sticker, value, class_ids) VALUES ('{name}', '{sticker}', {value}, '%s')" % class_ids_stroke
+    create_request(sql_query, is_return=False)
+
+def add_teacher_value(name: str, subject_id: int | str, class_id: int | str) -> None:
+    class_ids_stroke = '{' + str(class_id) + '}'
+    sql_query = f"INSERT INTO teachers (name, subject_id, class_ids) VALUES ('{name}', {subject_id}, '%s')" % class_ids_stroke
+    create_request(sql_query, is_return=False)
+
 # Add user's value to database
 def add_user(telegram_id: int | str, class_id: int | str = 0) -> None:
     """
@@ -199,17 +209,18 @@ def add_user(telegram_id: int | str, class_id: int | str = 0) -> None:
 
 
 # Add admin's value to database
-def add_admin(telegram_id: int | str, value: bool = True, class_id: int | str = 0) -> None:
+def add_admin(telegram_id: int | str, value: bool = True, super_admin: bool = False, class_id: int | str = 0) -> None:
     """
     Insert and update value of admin's table. If admin is already in database use 'UPDATE' method.
     :param telegram_id: the telegram id of admin
     :param value: the bool type value of admin activity
+    :param super_admin: the bool type of super_admin activity
     :param class_id: the class id of admin
     """
     if telegram_id not in list(map(lambda x: x[0], get_admins())) and value:
-        sql_query = f"INSERT INTO admins (telegram_id, value, class_id) VALUES ('{telegram_id}', {value}, {class_id})"
+        sql_query = f"INSERT INTO admins (telegram_id, value, super_admin, class_id) VALUES ('{telegram_id}', {value}, {super_admin}, {class_id})"
     else:
-        sql_query = f"UPDATE admins SET value = {value}, class_id = {class_id} WHERE telegram_id = '{telegram_id}'"
+        sql_query = f"UPDATE admins SET value = {value}, class_id = {class_id}, super_admin = {super_admin} WHERE telegram_id = '{telegram_id}'"
     create_request(sql_query, is_return=False)
 
 
@@ -235,7 +246,7 @@ def update_admin_class(telegram_id: int | str, class_id: int | str) -> None:
     create_request(sql_query, is_return=False)
 
 # Update homework's value to database
-def update_homework(homework_id: int | str, date: str, description: str, file_id: str) -> None:
+def update_homework(homework_id: int | str, subject_id: int | str, date: str, description: str, file_id: str) -> None:
     """
     Update date, description and file of homework.
     :param homework_id: the id of homework
@@ -244,7 +255,7 @@ def update_homework(homework_id: int | str, date: str, description: str, file_id
     :param file_id: the file id of homework
     """
     date = datetime.datetime.strptime(date, '%d.%m.%Y')
-    sql_query = (f"UPDATE homework SET date = '{date}', description = '{description}', file_id = '{file_id}' "
+    sql_query = (f"UPDATE homework SET subject_id = {subject_id}, date = '{date}', description = '{description}', file_id = '{file_id}' "
                  f"WHERE id = {homework_id}")
     create_request(sql_query, is_return=False)
 
@@ -253,6 +264,9 @@ def update_class(class_id: int | str, number: int | str, letter: str) -> None:
     sql_query = f"UPDATE class SET number = {number}, letter = '{letter}' WHERE id = {class_id}"
     create_request(sql_query, is_return=False)
 
+def update_subject(subject_id: int | str, name: str, sticker: str) -> None:
+    sql_query = f"UPDATE subject SET name = '{name}', sticker = '{sticker}' WHERE id = {subject_id}"
+    create_request(sql_query, is_return=False)
 
 # Delete homework's value from database
 def delete_homework(homework_id: int | str) -> None:
@@ -261,6 +275,11 @@ def delete_homework(homework_id: int | str) -> None:
     :param homework_id: the id of homework
     """
     sql_query = f"DELETE FROM homework WHERE id = {homework_id}"
+    create_request(sql_query, is_return=False)
+
+# Delete homework's value from database
+def delete_subject(subject_id: int | str) -> None:
+    sql_query = f"DELETE FROM subject WHERE id = {subject_id}"
     create_request(sql_query, is_return=False)
 
 
@@ -275,4 +294,14 @@ def delete_class(class_id: int | str) -> None:
     # also delete homework, schedule, teachers whose class_id is deleted
     # create delete_{table_name}(some parameters for identification {columns of table_name}, like id, description etc.)
     # create func for all tables and call it (delete something) with params
+    create_request(sql_query, is_return=False)
+
+
+def add_timetable(id: int | str, start_time: datetime.time, end_time: datetime.time) -> None:
+    print(start_time, end_time)
+    sql_query = f"INSERT INTO timetable (id, start_time, end_time) VALUES ({id}, '{start_time}', '{end_time}')"
+    create_request(sql_query, is_return=False)
+
+def update_timetable(id: int | str, start_time: datetime.time, end_time: datetime.time) -> None:
+    sql_query = f"UPDATE timetable SET start_time = '{start_time}', end_time = '{end_time}' WHERE id = {id}"
     create_request(sql_query, is_return=False)

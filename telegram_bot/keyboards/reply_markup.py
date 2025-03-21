@@ -8,7 +8,7 @@ from telegram_bot.database_methods.database_request import get_subject, get_clas
 def get_subjects_keyboard(class_id: int | str) -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
 
-    for elem in get_subject(class_ids=class_id):
+    for elem in get_subject(value=True, class_ids=class_id):
         builder.row(KeyboardButton(text=elem[1]))
 
     return builder.as_markup()

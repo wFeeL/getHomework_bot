@@ -1,15 +1,15 @@
+import logging
+
 from aiogram import Router, F, Bot
 from aiogram.client.bot import DefaultBotProperties
-from aiogram.filters.callback_data import CallbackData
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
-from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback
+from aiogram.types import Message, CallbackQuery
 
 from telegram_bot import text_message
 from telegram_bot.config_reader import config
 from telegram_bot.database_methods.database_request import *
-from telegram_bot.keyboards import inline_markup, reply_markup
+from telegram_bot.keyboards import inline_markup
 
 
 # Form for message data
@@ -17,6 +17,7 @@ class MessageForm(StatesGroup):
     text = State()
 
 
+logger = logging.getLogger('Sender')
 router = Router()
 bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode='HTML'))
 
@@ -49,6 +50,9 @@ async def send_message(callback: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
 
     for telegram_id in list(map(lambda elem: elem[0], users_list)):
-        await bot.send_message(chat_id=telegram_id, text=text_to_send)
+        try:
+            await bot.send_message(chat_id=telegram_id, text=text_to_send)
+        except Exception as error:
+            logger.info(f"Handle {error.__class__.__name__} while sending message to {telegram_id}")
 
     await callback.message.answer(text=text_message.BOT_MESSAGE_SUCCESS)

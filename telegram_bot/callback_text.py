@@ -12,9 +12,11 @@ CALLBACK = {
     'send_tomorrow_homework': 'tomorrow_homework',
     'send_calendar_homework': 'calendar_homework',
     'send_class': 'class',
+    'send_choose_class': 'choose_class',
     'send_schedule': 'schedule_menu',
     'send_admin_menu': 'admin_menu',
-    'send_adding_states': 'adding_states'
+    'send_adding_states': 'adding_states',
+    'send_add_subject': 'adding_subject'
 }
 
 bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode='HTML'))

@@ -1,9 +1,7 @@
 from datetime import datetime, timedelta
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
-from aiogram_dialog.widgets.kbd import Keyboard
-from telebot.types import KeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from telegram_bot import callback_text, text_message
 from telegram_bot.database_methods.database_request import get_subject, get_homework, get_weekday, get_class
@@ -30,15 +28,25 @@ def get_donate_button(text='💰 Донат') -> list[InlineKeyboardButton]:
     return button
 
 
-def get_class_button(text='👤 Выбрать класс') -> list[InlineKeyboardButton]:
-    button = [InlineKeyboardButton(text=text, callback_data=callback_text.CALLBACK['send_class'])]
+def get_choose_class_button(text='👤 Выбрать класс') -> list[InlineKeyboardButton]:
+    button = [InlineKeyboardButton(text=text, callback_data=callback_text.CALLBACK['send_choose_class'])]
     return button
 
+# def get_class_button(text='👤 Мой класс') -> list[InlineKeyboardButton]:
+#     button = [InlineKeyboardButton(text=text, callback_data=callback_text.CALLBACK['send_class'])]
+#     return button
 
 def get_calendar_homework_button(text='🗓 Выбрать дату') -> list[InlineKeyboardButton]:
     button = [InlineKeyboardButton(text=text, callback_data=callback_text.CALLBACK['send_calendar_homework'])]
     return button
 
+def get_schedule_button(text='⏰ Показать расписание', weekday_id: int = 0) -> list[InlineKeyboardButton]:
+    if weekday_id != 0:
+        button = [InlineKeyboardButton(text=text, callback_data="{\"weekday_id\":" + str(weekday_id) +
+                                                                ",\"is_homework\":\"True\"}")]
+    else:
+        button = [InlineKeyboardButton(text=text, callback_data='None')]
+    return button
 
 # Inline keyboard button for admin
 def get_admin_menu_button() -> list[InlineKeyboardButton]:
@@ -53,6 +61,11 @@ def get_add_homework_button() -> list[InlineKeyboardButton]:
     return button
 
 
+def get_add_subject_button() -> list[InlineKeyboardButton]:
+    button = [InlineKeyboardButton(text='Добавить школьный предмет',
+                                   callback_data=callback_text.CALLBACK['send_add_subject'])]
+    return button
+
 def get_delete_message_button(text='👀 Скрыть') -> list[InlineKeyboardButton]:
     button = [InlineKeyboardButton(text=text, callback_data='delete_message')]
     return button
@@ -62,7 +75,7 @@ def get_stop_state_button(text='👀 Скрыть') -> list[InlineKeyboardButton
     button = [InlineKeyboardButton(text=text, callback_data='stop_state')]
     return button
 
-def get_edit_class_button(text='📝 Изменить данные класса', class_id: int | str = 0) -> list[InlineKeyboardButton]:
+def get_edit_class_button(text='📝 Редактировать класс', class_id: int | str = 0) -> list[InlineKeyboardButton]:
     button = [InlineKeyboardButton(text=text, callback_data="{\"class_id\":" + str(class_id) + ",\"edit\":\"True\"}")]
     return button
 
@@ -70,6 +83,9 @@ def get_delete_class_button(text='🗑️ Удалить класс', class_id: 
     button = [InlineKeyboardButton(text=text, callback_data="{\"class_id\":" + str(class_id) + ",\"delete\":\"True\"}")]
     return button
 
+def get_delete_subject_button(text='🗑️ Удалить предмет', subject_id: int | str = 0) -> list[InlineKeyboardButton]:
+    button = [InlineKeyboardButton(text=text, callback_data="{\"subject_id\":" + str(subject_id) + ",\"delete\":\"True\"}")]
+    return button
 # def make_button(
 #         text: str,
 #         callback_data: str,
@@ -84,7 +100,7 @@ def get_delete_class_button(text='🗑️ Удалить класс', class_id: 
 def get_start_keyboard(is_class: bool = True) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if not is_class:
-        builder.add(get_class_button()[0])
+        builder.add(get_choose_class_button()[0])
     else:
         builder.add(get_homework_menu_button('🔍 Открыть меню поиска')[0])
 
@@ -97,7 +113,7 @@ def get_start_keyboard(is_class: bool = True) -> InlineKeyboardMarkup:
 def get_help_keyboard(is_class: bool = True) -> InlineKeyboardMarkup:
     keyboard = []
     if not is_class:
-        keyboard.append(get_class_button())
+        keyboard.append(get_choose_class_button())
     keyboard += [get_donate_button('💰Поддержать автора'), get_support_button()]
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
@@ -119,7 +135,7 @@ def get_homework_menu() -> InlineKeyboardMarkup:
 def get_all_homework_keyboard(class_id: int | str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
-    subjects = get_subject(class_ids=class_id)
+    subjects = get_subject(value=True, class_ids=class_id)
 
     for i in range(len(subjects)):
         subject_id, subject_name, subject_sticker = subjects[i][0], subjects[i][1], subjects[i][2]
@@ -165,7 +181,6 @@ def get_homework_pagination(length: int, page: int, subject_id: int | str,
 
     builder.adjust(3, 1)
     if is_admin:
-        # homework_id = int(get_homework_id_by_subject(subject_name, class_id)[page - 1][0])
         homework_id = int(get_homework(subject_id=subject_id, class_id=class_id)[page - 1][0])
 
         edit_button = InlineKeyboardButton(
@@ -197,7 +212,7 @@ def get_schedule_keyboard(class_id: int | str) -> InlineKeyboardMarkup:
 
 
 # Create class keyboard for /class
-def get_class_keyboard() -> InlineKeyboardMarkup:
+def get_choose_class_keyboard() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     classes = get_class(value=True)
     # check if list of class is null
@@ -210,7 +225,7 @@ def get_class_keyboard() -> InlineKeyboardMarkup:
 
 
 # Create schedule's day for buttons of /schedule
-def get_weekday_keyboard(weekday_id: int | str) -> InlineKeyboardMarkup:
+def get_weekday_keyboard(weekday_id: int) -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text='◀ Назад', callback_data="{\"weekday_id\":\"" + f"{weekday_id - 1}" + "\"}"),
          InlineKeyboardButton(text='Вперед ▶', callback_data="{\"weekday_id\":\"" + f"{weekday_id + 1}" + "\"}")],
@@ -228,35 +243,37 @@ def get_site_keyboard() -> InlineKeyboardMarkup:
 
 
 # Create calendar keyboard for callback of /calendar
-def get_calendar_keyboard(selected_date, media_group: tuple[int, int] = None) -> InlineKeyboardMarkup:
+def get_calendar_keyboard(
+        selected_date,
+        weekday_id: int = 0,
+        media_group: tuple[int, int] = None
+) -> InlineKeyboardMarkup:
     next_date = datetime.strftime(selected_date + timedelta(days=1), '%Y-%m-%d')
     previous_date = datetime.strftime(selected_date - timedelta(days=1), '%Y-%m-%d')
 
+    builder = InlineKeyboardBuilder()
+
+    if weekday_id != 0:
+        builder.row(get_schedule_button(weekday_id=weekday_id)[0])
+
+    builder.row(get_calendar_homework_button()[0])
+    builder.row(get_homework_menu_button()[0])
+
     if media_group is None:
-        markup = InlineKeyboardMarkup(
-            inline_keyboard=[
-                get_calendar_homework_button(),
-                get_homework_menu_button(),
-                [InlineKeyboardButton(text='◀ Назад', callback_data="{\"date\":\"" + f"{previous_date}" + "\"}"),
-                 InlineKeyboardButton(text='Вперед ▶', callback_data="{\"date\":\"" + f"{next_date}" + "\"}")]
-            ])
+        builder.row(InlineKeyboardButton(text='◀ Назад', callback_data="{\"date\":\"" + f"{previous_date}" + "\"}"),
+                    InlineKeyboardButton(text='Вперед ▶', callback_data="{\"date\":\"" + f"{next_date}" + "\"}"))
     else:
         first_message_id = media_group[0]
         last_message_id = first_message_id + media_group[1]
-        markup = InlineKeyboardMarkup(
-            inline_keyboard=[
-                get_calendar_homework_button(),
-                get_homework_menu_button(),
-                [InlineKeyboardButton(
-                    text='◀ Назад',
-                    callback_data="{" + f"\"date\":\"{previous_date}\",\"first_msg\":\"{first_message_id}\","
-                                        f"\"last_msg\":\"{last_message_id}\"" + "}"),
-                    InlineKeyboardButton(
-                        text='Вперед ▶',
-                        callback_data="{" + f"\"date\":\"{next_date}\",\"first_msg\":\"{first_message_id}\","
-                                            f"\"last_msg\":\"{last_message_id}\"" + "}")],
-            ])
-    return markup
+        builder.row(InlineKeyboardButton(
+            text='◀ Назад',
+            callback_data="{" + f"\"date\":\"{previous_date}\",\"first_msg\":\"{first_message_id}\","
+                                f"\"last_msg\":\"{last_message_id}\"" + "}"),
+            InlineKeyboardButton(
+                text='Вперед ▶',
+                callback_data="{" + f"\"date\":\"{next_date}\",\"first_msg\":\"{first_message_id}\","
+                                    f"\"last_msg\":\"{last_message_id}\"" + "}"))
+    return builder.as_markup()
 
 
 def get_random_text_keyboard() -> InlineKeyboardMarkup:
@@ -274,11 +291,11 @@ def get_delete_message_keyboard() -> InlineKeyboardMarkup:
 
 
 # Create search homework keyboard
-def get_chosen_class_keyboard(class_id: int = 0, is_super_admin: bool = False) -> InlineKeyboardMarkup:
+def get_class_keyboard(class_id: int = 0, is_super_admin: bool = False) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.add(get_homework_menu_button('🔍 Открыть меню поиска')[0],get_class_button()[0])
+    builder.add(get_choose_class_button()[0], get_homework_menu_button('🔍 Открыть меню поиска')[0])
     if is_super_admin:
-        builder.add(get_edit_class_button(class_id=class_id)[0], get_delete_class_button(class_id=class_id)[0])
+        builder.add(get_edit_class_button(class_id=class_id)[0])
     builder.adjust(1, 1)
     return builder.as_markup()
 
@@ -318,6 +335,22 @@ def get_send_class_keyboard() -> InlineKeyboardMarkup:
         ])
     return markup
 
+def get_send_subject_keyboard() -> InlineKeyboardMarkup:
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='✅ Сохранить данные', callback_data='send_subject_data')],
+            [InlineKeyboardButton(text='🚫 Отмена', callback_data='cancel_send_data')]
+        ])
+    return markup
+
+def get_send_teacher_keyboard() -> InlineKeyboardMarkup:
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='✅ Сохранить данные', callback_data='send_teacher_data')],
+            [InlineKeyboardButton(text='🚫 Отмена', callback_data='cancel_send_data')]
+        ])
+    return markup
+
 # Create edit keyboard for /edit (editing menu for homework's data)
 def get_edit_homework_keyboard(is_file: bool = True, is_edited: bool = False) -> InlineKeyboardMarkup:
     keyboard = [[InlineKeyboardButton(text='🗓️ Редактировать дату', callback_data='edit_date')],
@@ -331,15 +364,26 @@ def get_edit_homework_keyboard(is_file: bool = True, is_edited: bool = False) ->
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     return markup
 
-def get_edit_class_keyboard(is_edited: bool = False) -> InlineKeyboardMarkup:
+def get_edit_class_keyboard(class_id: int | str, is_edited: bool = False) -> InlineKeyboardMarkup:
     keyboard = [[InlineKeyboardButton(text='🗓️ Редактировать номер', callback_data='edit_number')],
-                [InlineKeyboardButton(text='📝 Редактировать литер', callback_data='edit_letter')]]
+                [InlineKeyboardButton(text='📝 Редактировать литер', callback_data='edit_letter')],
+                get_delete_class_button(class_id=class_id)]
     if is_edited:
         keyboard.append([InlineKeyboardButton(text='✅ Сохранить данные', callback_data='edit_class_data')])
         keyboard.append(get_stop_state_button())
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
     return markup
 
+
+def get_edit_subject_keyboard(subject_id: int | str, is_edited: bool = False) -> InlineKeyboardMarkup:
+    keyboard = [[InlineKeyboardButton(text='📝 Редактировать название', callback_data='edit_name')],
+                [InlineKeyboardButton(text='🗓️ Редактировать стикер', callback_data='edit_sticker')],
+                get_delete_subject_button(subject_id=subject_id)]
+    if is_edited:
+        keyboard.append([InlineKeyboardButton(text='✅ Сохранить данные', callback_data='edit_subject_data')])
+        keyboard.append(get_stop_state_button())
+    markup = InlineKeyboardMarkup(inline_keyboard=keyboard)
+    return markup
 
 # Create skipping file keyboard for /add
 def get_skip_file_keyboard() -> InlineKeyboardMarkup:
@@ -361,3 +405,31 @@ def get_send_message_keyboard() -> InlineKeyboardMarkup:
 def get_users_keyboard() -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(inline_keyboard=[get_admin_menu_button()])
     return markup
+
+def get_all_subject(class_id: int | str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    subjects = get_subject(value=True, class_ids=class_id)
+    for subject in subjects:
+        subject_name = subject[1]
+        subject_sticker = subject[2]
+        subject_id = subject[0]
+        builder.add(InlineKeyboardButton(
+            text=f'{subject_sticker} {subject_name}', callback_data="{\"subject_id\":\"" + f"{subject_id}" + "\"}")
+        )
+    if len(subjects) < 40:
+        builder.add(get_add_subject_button()[0])
+    builder.adjust(1, 1)
+    return builder.as_markup()
+
+
+def get_subject_keyboard(subject_id: int | str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    edit_button = InlineKeyboardButton(
+        text='📝 Редактировать предмет', callback_data="{\"subject_id\":" + str(subject_id) +
+                                                          ",\"edit\":\"True\"}")
+    delete_button = InlineKeyboardButton(
+        text='🗑️ Удалить предмет', callback_data="{\"subject_id\":" + str(subject_id) +
+                                                          ",\"delete\":\"True\"}")
+    builder.add(edit_button, delete_button)
+    builder.adjust(1, 1)
+    return builder.as_markup()

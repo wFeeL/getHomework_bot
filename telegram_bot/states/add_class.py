@@ -12,7 +12,7 @@ from telegram_bot.database_methods.database_request import *
 from telegram_bot.keyboards import inline_markup, reply_markup
 
 
-class ClassForm(StatesGroup):
+class AddClassForm(StatesGroup):
     number = State()
     letter = State()
 
@@ -23,10 +23,10 @@ bot = Bot(config.bot_token, default=DefaultBotProperties(parse_mode='HTML'))
 
 async def register_class(message: Message, state: FSMContext) -> None:
     await message.answer(text=text_message.CHOOSE_CLASS_NUMBER, reply_markup=reply_markup.get_choose_class_keyboard())
-    await state.set_state(ClassForm.number)
+    await state.set_state(AddClassForm.number)
 
 
-@router.message(ClassForm.number)
+@router.message(AddClassForm.number)
 async def process_class_number(message: Message, state: FSMContext) -> None:
     class_number = message.text
     CLASS_LEN = 11 # set as constant variable
@@ -35,14 +35,14 @@ async def process_class_number(message: Message, state: FSMContext) -> None:
             raise ValueError
         await state.update_data(number=class_number)
         await message.answer(text=text_message.CHOOSE_CLASS_LETTER, reply_markup=ReplyKeyboardRemove())
-        await state.set_state(ClassForm.letter)
+        await state.set_state(AddClassForm.letter)
 
     except ValueError:
         await message.answer(text_message.INCORRECT_REQUEST, reply_markup=inline_markup.get_delete_message_keyboard())
         await state.clear()
 
 
-@router.message(ClassForm.letter)
+@router.message(AddClassForm.letter)
 async def process_class_letter(message: Message, state: FSMContext) -> None:
     class_letter = message.text
     try:
@@ -58,7 +58,7 @@ async def process_class_letter(message: Message, state: FSMContext) -> None:
 async def send_class(message: Message, state: FSMContext) -> None:
     try:
         class_data = await state.get_data()
-        number, letter = class_data['number'], class_data['letter']
+        number, letter = class_data.values()
 
         class_text = text_message.CLASS_DATA_TO_SEND.format(number=number, letter=letter)
         markup = inline_markup.get_send_class_keyboard()
@@ -73,7 +73,7 @@ async def send_class(message: Message, state: FSMContext) -> None:
 async def send_data(callback: CallbackQuery, state: FSMContext) -> None:
     try:
         class_data = await state.get_data()
-        number, letter = class_data['number'], class_data['letter']
+        number, letter = class_data.values()
         add_class_value(number, letter)
 
         await callback.message.answer(text_message.ADDING_CLASS_COMPLETE.format(number=number, letter=letter),
@@ -85,11 +85,3 @@ async def send_data(callback: CallbackQuery, state: FSMContext) -> None:
         await callback.message.answer(text_message.INCORRECT_REQUEST,
                                       reply_markup=inline_markup.get_delete_message_keyboard())
         await state.clear()
-
-@router.callback_query(F.data == 'cancel_send_data')
-async def cancel_send_data(callback: CallbackQuery, state: FSMContext) -> None:
-    await state.clear()
-    await callback.message.delete()
-    await callback.message.answer(text_message.CANCEL_ACTION, reply_markup=inline_markup.get_admin_menu())
-
-

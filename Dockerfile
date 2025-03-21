@@ -21,4 +21,4 @@ COPY ./telegram_bot /app/telegram_bot
 
 WORKDIR /app
 
-CMD ["python", "-m", "telegram_bot.bot"]
+CMD ["python", "-m", "telegram_bot"]
