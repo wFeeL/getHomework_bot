@@ -203,10 +203,9 @@ def get_schedule_keyboard(class_id: int | str) -> InlineKeyboardMarkup:
     weekend = get_weekday(class_ids=class_id)
 
     for i in range(len(weekend)):
-        weekday_id = weekend[i][0]
         weekday_name = weekend[i][1]
         builder.row(InlineKeyboardButton(text=f'{text_message.SCHEDULE_DICTIONARY_RUS[weekday_name]}'.capitalize(),
-                                         callback_data="{\"weekday_id\":\"" + f"{weekday_id}" + "\"}"))
+                                         callback_data="{\"weekday_index\":\"" + f"{i}" + "\"}"))
 
     return builder.as_markup()
 
@@ -225,10 +224,10 @@ def get_choose_class_keyboard() -> InlineKeyboardMarkup:
 
 
 # Create schedule's day for buttons of /schedule
-def get_weekday_keyboard(weekday_id: int) -> InlineKeyboardMarkup:
+def get_weekday_keyboard(weekday_index: int) -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='◀ Назад', callback_data="{\"weekday_id\":\"" + f"{weekday_id - 1}" + "\"}"),
-         InlineKeyboardButton(text='Вперед ▶', callback_data="{\"weekday_id\":\"" + f"{weekday_id + 1}" + "\"}")],
+        [InlineKeyboardButton(text='◀ Назад', callback_data="{\"weekday_index\":\"" + f"{weekday_index - 1}" + "\"}"),
+         InlineKeyboardButton(text='Вперед ▶', callback_data="{\"weekday_index\":\"" + f"{weekday_index + 1}" + "\"}")],
         [InlineKeyboardButton(text='🔄 Выбрать день', callback_data=callback_text.CALLBACK['send_schedule'])]
     ])
     return markup

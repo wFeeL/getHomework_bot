@@ -611,11 +611,11 @@ async def handle_homework_pagination(callback: CallbackQuery) -> None:
 
 
 # Callback for /schedule
-@router.callback_query(lambda call: 'weekday_id' in call.data)
+@router.callback_query(lambda call: 'weekday_index' in call.data)
 async def handle_schedule(callback: CallbackQuery) -> None:
     # Loading data from callback in json format
     callback_data = json.loads(callback.data)
-    weekday_id = int(callback_data['weekday_id'])
+    weekday_index = int(callback_data['weekday_index'])
     is_homework = False
     try:
         is_homework = callback_data['is_homework']
@@ -624,16 +624,14 @@ async def handle_schedule(callback: CallbackQuery) -> None:
 
     class_id = get_users(telegram_id=callback.message.chat.id)[0][1]
     class_weekend = get_weekday(class_ids=class_id)
-    min_weekday_id = class_weekend[0][0]
-    max_weekday_id = len(class_weekend)
+    max_weekday_index = len(class_weekend)
 
-    if weekday_id == max_weekday_id + 1:
-        weekday_id = min_weekday_id
+    if weekday_index == max_weekday_index:
+        weekday_index = 0
 
-    elif weekday_id == min_weekday_id - 1:
-        weekday_id = max_weekday_id
-
-    weekday_name = get_weekday(id=weekday_id, class_ids=class_id)[0][1]
+    elif weekday_index == -1:
+        weekday_index = max_weekday_index - 1
+    weekday_name = class_weekend[weekday_index][1]
     weekday_name_rus = text_message.SCHEDULE_DICTIONARY_RUS[weekday_name]  # Translate weekday_name to Russian
     morph = pymorphy3.MorphAnalyzer()
     weekday_name_rus = morph.parse(weekday_name_rus)[0].inflect({'accs'}).word
@@ -647,7 +645,7 @@ async def handle_schedule(callback: CallbackQuery) -> None:
     if not is_homework:
         await callback.message.edit_text(
             text=text_message.SCHEDULE_TEXT.format(weekday_name=weekday_name_rus, schedule=schedule_text),
-            reply_markup=inline_markup.get_weekday_keyboard(weekday_id)
+            reply_markup=inline_markup.get_weekday_keyboard(weekday_index)
         )
     else:
         await callback.message.answer(
