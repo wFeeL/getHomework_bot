@@ -36,7 +36,7 @@ Clone the project, build an image and run the project in [Docker](https://www.do
 git clone https://github.com/wFeeL/getHomework_bot.git
 cd getHomework_bot
 touch .env
-docker build -f Dockefile -t homework_bot .
+docker build -f Dockerfile -t homework_bot .
 docker volume create --name=db_data
 docker-compose up
 ```
