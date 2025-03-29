@@ -40,9 +40,9 @@ def get_calendar_homework_button(text='🗓 Выбрать дату') -> list[In
     button = [InlineKeyboardButton(text=text, callback_data=callback_text.CALLBACK['send_calendar_homework'])]
     return button
 
-def get_schedule_button(text='⏰ Показать расписание', weekday_id: int = 0) -> list[InlineKeyboardButton]:
-    if weekday_id != 0:
-        button = [InlineKeyboardButton(text=text, callback_data="{\"weekday_id\":" + str(weekday_id) +
+def get_schedule_button(weekday_index: int | None, text='⏰ Показать расписание') -> list[InlineKeyboardButton]:
+    if weekday_index is not None:
+        button = [InlineKeyboardButton(text=text, callback_data="{\"weekday_index\":" + str(weekday_index) +
                                                                 ",\"is_homework\":\"True\"}")]
     else:
         button = [InlineKeyboardButton(text=text, callback_data='None')]
@@ -201,7 +201,6 @@ def get_homework_pagination(length: int, page: int, subject_id: int | str,
 def get_schedule_keyboard(class_id: int | str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     weekend = get_weekday(class_ids=class_id)
-
     for i in range(len(weekend)):
         weekday_name = weekend[i][1]
         builder.row(InlineKeyboardButton(text=f'{text_message.SCHEDULE_DICTIONARY_RUS[weekday_name]}'.capitalize(),
@@ -244,7 +243,7 @@ def get_site_keyboard() -> InlineKeyboardMarkup:
 # Create calendar keyboard for callback of /calendar
 def get_calendar_keyboard(
         selected_date,
-        weekday_id: int = 0,
+        weekday_index: int | None,
         media_group: tuple[int, int] = None
 ) -> InlineKeyboardMarkup:
     next_date = datetime.strftime(selected_date + timedelta(days=1), '%Y-%m-%d')
@@ -252,8 +251,8 @@ def get_calendar_keyboard(
 
     builder = InlineKeyboardBuilder()
 
-    if weekday_id != 0:
-        builder.row(get_schedule_button(weekday_id=weekday_id)[0])
+    if weekday_index is not None:
+        builder.row(get_schedule_button(weekday_index=weekday_index)[0])
 
     builder.row(get_calendar_homework_button()[0])
     builder.row(get_homework_menu_button()[0])

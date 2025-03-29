@@ -802,23 +802,20 @@ async def send_date_homework(message: Message | CallbackQuery, date: datetime, *
             logger.info(error.message)
 
     class_id = get_users(telegram_id=message.chat.id)[0][1]
-
-    # homework_data = get_homework_by_date(date, class_id)
     homework_data = get_homework(date=date, class_id=class_id)
 
     morph = pymorphy3.MorphAnalyzer()
     weekday_name = morph.parse(date.strftime('%A'))[0].inflect({'accs'}).word
     date_text = date.strftime("%d.%m.%Y")
 
-    weekday_id = 0
-
+    weekday_index = None
     for weekday in text_message.SCHEDULE_DICTIONARY_RUS:
         if text_message.SCHEDULE_DICTIONARY_RUS[weekday] == date.strftime('%A').lower():
-            weekday = get_weekday(name=weekday, class_ids=class_id)
-            if len(weekday) == 0:
+            class_weekday = list(map(lambda elem: elem[1], get_weekday(class_ids=class_id)))
+            if weekday not in class_weekday:
                 break
-            weekday_id = weekday[0][0]
-    markup = inline_markup.get_calendar_keyboard(date, media_group=None, weekday_id=weekday_id)
+            weekday_index = class_weekday.index(weekday)
+    markup = inline_markup.get_calendar_keyboard(date, weekday_index=weekday_index, media_group=None)
 
     if len(homework_data) > 0:
 
@@ -844,7 +841,7 @@ async def send_date_homework(message: Message | CallbackQuery, date: datetime, *
             media_group = await bot.send_media_group(chat_id=message.chat.id, media=media_group)
             media_group_id, media_group_len = media_group[0].message_id, len(media_group)
 
-            markup = inline_markup.get_calendar_keyboard(date, weekday_id=weekday_id,
+            markup = inline_markup.get_calendar_keyboard(date, weekday_index=weekday_index,
                                                          media_group=(media_group_id, media_group_len))
             await message.answer(text=text_message.CHOOSE_ACTION, reply_markup=markup)
 
