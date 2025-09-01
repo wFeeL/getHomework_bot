@@ -635,12 +635,15 @@ async def handle_schedule(callback: CallbackQuery) -> None:
     weekday_name_rus = text_message.SCHEDULE_DICTIONARY_RUS[weekday_name]  # Translate weekday_name to Russian
     morph = pymorphy3.MorphAnalyzer()
     weekday_name_rus = morph.parse(weekday_name_rus)[0].inflect({'accs'}).word
-
     # Create schedule_text from database data
-    schedule_text = '\n'.join(
-        list(map(lambda elem: f'{elem[0] + 1}. {elem[1][0]}' if elem[1][0] is not None else f'{elem[0] + 1}. Нет урока',
-                 enumerate(get_schedule(weekday_name, class_id))))
-    )
+    schedule_data = []
+    for index, weekday in enumerate(get_schedule(weekday_name, class_id)):
+        subject_name, cabinet = weekday[0], weekday[1]
+        if subject_name is None:
+            subject_name = 'Нет урока'
+        cabinet = '' if cabinet is None else f'({cabinet})'
+        schedule_data.append(f'{index + 1}. {subject_name} {cabinet}')
+    schedule_text = '\n'.join(schedule_data)
 
     if not is_homework:
         await callback.message.edit_text(

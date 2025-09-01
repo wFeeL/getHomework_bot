@@ -124,7 +124,7 @@ def get_schedule(weekday: str, class_id: int | str) -> list:
     """
     weekday_id = get_weekday(name=weekday)[0][0]
 
-    sql_query = ('SELECT s.name FROM schedule AS t LEFT JOIN subject AS s ON s.id = t.subject_id '
+    sql_query = ('SELECT s.name, t.cabinet FROM schedule AS t LEFT JOIN subject AS s ON s.id = t.subject_id '
                  f'WHERE t.weekday_id = {weekday_id} AND class_id = {class_id} ORDER BY weight ASC')
 
     return create_request(sql_query)
