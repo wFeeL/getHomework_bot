@@ -54,7 +54,7 @@ def get_admins(telegram_id: int | str = None, value: bool | str = None, super_ad
 
 # Return data from homework table
 def get_homework(id: int | str = None, subject_id: int | str = None, date: datetime.datetime | str = None,
-                 class_id: int | str = None) -> list:
+                 class_id: int | str = None, value: bool = True) -> list:
     """
     Return homework's data from homework's table from database. Take args for finding homework in table.
     :param id: the homework's id
